@@ -21,6 +21,20 @@ public:
         }
         cout << "\nend text\n";
     }
+    ullong get(int i) {
+        if (i < size) {
+            return text[i];
+        }
+        else return 0;
+    }
+    void set(ullong a, int i) {
+        if (i < size) {
+            text[i] = a;
+        }
+    }
+    int getSize() {
+        return size;
+    }
     ~Data() {
         delete[]text;
     }
@@ -31,7 +45,12 @@ class Gamma {
 public:
     Gamma(int256 key): key{key}{}
     Data& encrypt(Data& text, ullong iv) {
+        Magma alg(key);
         Magma::setDecrypt();
+        for (int i = 0; i < text.getSize(); ++i) {
+            iv = alg.encrypt(iv);
+            text.set(text.get(i) ^ iv, i);
+        }
         return text;
     }
 };
