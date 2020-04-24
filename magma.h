@@ -1,6 +1,9 @@
+/* Перед тем как вызвать encrypt, необходимо вызвать
+Magma::setDecrypt() для установки направления работы алгоритма
+*/
+
 #ifndef MAGMA_H
 #define MAGMA_H
-
 typedef unsigned long long ullong;  //64b
 typedef unsigned long ulong;        //32b
 
@@ -60,16 +63,13 @@ class Magma {
     }
     ullong round(ullong& left, ullong& right) {
         ullong old;
-        //cout << "start: " << left << ' ' << right << endl;
         for (int i = 0; i < 31; ++i) {
             old = right;//remember old right value
             right = left ^ f(right, xkey[i], i);//xor
             left = old;
-            //cout << left << ' ' << right << endl;
         }
         //last round, 32
         left = left ^ f(right, xkey[31], 31);
-        //cout << left << ' ' << right << endl;
         left <<= 32;
         left += right;
         return left;
@@ -83,15 +83,20 @@ class Magma {
         }
     }
 public:
-    static int mode;//1 - encrypt
+    enum Modes {Decrypt, Encrypt};
+    static int mode;
     static void setEncrypt() {
-        mode = 1;
+        mode = Encrypt;
     }
     static void setDecrypt() {
-        mode = 0;
+        mode = Decrypt;
     }
     static int getMode() {
         return mode;
+    }
+    Magma();
+    void setKey(int256 a) {
+        key = a;
     }
     Magma(int256 key): key{key}{
         setKeys();
@@ -100,7 +105,7 @@ public:
         ullong left = data;
         ullong right = left & mod32;
         left >>= 32;
-        if (!getMode()) {
+        if (getMode() == Decrypt) {
             setXkey();
             setEncrypt();
         }
@@ -111,15 +116,11 @@ public:
         ullong left = data;
         ullong right = left & mod32;
         left >>= 32;
-        if (getMode()) {
+        if (getMode() == Encrypt) {
             setXkey();
             //reverse xkey
-            ulong* tmp = xkey;
-            for (int i = 0; i < 32; ++i) {
-                xkey[i] = tmp[32 - i - 1];
-            }
-            for (int i = 16; i < 24; ++i) {
-                xkey[i] = tmp[24 - i - 1];
+            for (int i = 8; i < 16; ++i) {
+                std::swap(xkey[i], xkey[32 - i - 1]);
             }
             setDecrypt();
         }
