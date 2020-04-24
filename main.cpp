@@ -11,7 +11,6 @@ public:
         text = new ullong[size];
         for (int i = 0; i < size; ++i) {
             text[i] = a[i];
-            cout << text[i] << ' ';
         }
     }
     void print(std::string a = "") {
@@ -46,26 +45,30 @@ public:
     Gamma(int256 key): key{key}{}
     Data& encrypt(Data& text, ullong iv) {
         Magma alg(key);
-        Magma::setDecrypt();
         for (int i = 0; i < text.getSize(); ++i) {
-            iv = alg.encrypt(iv);
+            iv = alg.crypt(iv);
             text.set(text.get(i) ^ iv, i);
         }
         return text;
     }
+    Data& decrypt(Data& text, ullong iv) {
+        return encrypt(text, iv);
+    }
 };
 
-int Magma::mode;
 int main() {
     cout << std::hex;
 
     vector<ullong> t = {0xfedcba9876543210, 0xffeeddfa540a9988, 0x7766fcfdfeff554};
     Data testText(t, t.size());
+    testText.print("original");
     int256 key(0xffeeddccbbaa9988, 0x7766554433221100, 0xf0f1f2f3f4f5f6f7, 0xf8f9fafbfcfdfeff);
     ullong iv = 0xff6554f5f6f78f9f;
 
     Gamma message(key);
     testText = message.encrypt(testText, iv);
     testText.print("encrypted");
+    testText = message.decrypt(testText, iv);
+    testText.print("decrypted");
     return 0;
 }

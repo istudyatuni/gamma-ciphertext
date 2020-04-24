@@ -1,7 +1,3 @@
-/* Перед тем как вызвать encrypt, необходимо вызвать
-Magma::setDecrypt() для установки направления работы алгоритма
-*/
-
 #ifndef MAGMA_H
 #define MAGMA_H
 typedef unsigned long long ullong;  //64b
@@ -39,6 +35,12 @@ class Magma {
             keys[i * 2] = left;
             keys[i * 2 + 1] = right;
         }
+        for (int i = 0; i < 24; ++i) {
+            xkey[i] = keys[i % 8];
+        }
+        for (int i = 7; i >= 0; --i) {
+            xkey[32 - i - 1] = keys[i];
+        }
     }
     ulong f(ullong a, ullong x, int pi) {
         a += x;
@@ -74,61 +76,16 @@ class Magma {
         left += right;
         return left;
     }
-    void setXkey() {
-        for (int i = 0; i < 24; ++i) {
-            xkey[i] = keys[i % 8];
-        }
-        for (int i = 7; i >= 0; --i) {
-            xkey[32 - i - 1] = keys[i];
-        }
-    }
 public:
-    enum Modes {Decrypt, Encrypt};
-    static int mode;
-    static void setEncrypt() {
-        mode = Encrypt;
-    }
-    static void setDecrypt() {
-        mode = Decrypt;
-    }
-    static int getMode() {
-        return mode;
-    }
-    Magma();
-    void setKey(int256 a) {
-        key = a;
-    }
     Magma(int256 key): key{key}{
         setKeys();
     }
-    ullong encrypt(ullong data){
+    ullong crypt(ullong data){
         ullong left = data;
         ullong right = left & mod32;
         left >>= 32;
-        if (getMode() == Decrypt) {
-            setXkey();
-            setEncrypt();
-        }
         data = round(left, right);
         return data;
-    }
-    ullong decrypt(ullong data){
-        ullong left = data;
-        ullong right = left & mod32;
-        left >>= 32;
-        if (getMode() == Encrypt) {
-            setXkey();
-            //reverse xkey
-            for (int i = 8; i < 16; ++i) {
-                std::swap(xkey[i], xkey[32 - i - 1]);
-            }
-            setDecrypt();
-        }
-        data = round(left, right);
-        return data;
-    }
-    int256 getKey() {
-        return key;
     }
 };
 
