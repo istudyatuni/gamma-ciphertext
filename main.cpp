@@ -46,13 +46,20 @@ public:
     Data& encrypt(Data& text, ullong iv) {
         Magma alg(key);
         for (int i = 0; i < text.getSize(); ++i) {
-            iv = alg.crypt(iv);
-            text.set(text.get(i) ^ iv, i);
+            iv = text.get(i) ^ alg.crypt(iv);
+            text.set(iv, i);
         }
         return text;
     }
     Data& decrypt(Data& text, ullong iv) {
-        return encrypt(text, iv);
+        Magma alg(key);
+        ullong tmp;
+        for (int i = 0; i < text.getSize(); ++i) {
+            tmp = text.get(i);
+            text.set(alg.crypt(iv) ^ tmp, i);
+            iv = tmp;
+        }
+        return text;
     }
 };
 
